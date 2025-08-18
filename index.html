@@ -817,7 +817,8 @@
                 "Shoulder": 2, "Cloak": 1, "Front": 1, "Chest": 1, "Undershirt": 1,
                 "Back": 1, "Arm": 1, "Wrist": 4, "Hands": 1, "Finger": 4,
                 "Waist": 1, "Belt": 3, "Legs": 1, "Pants": 1, "Leggings": 1,
-                "Ankle": 1, "Feet": 1, "Socks": 1, "Locus": 1, "Tattoo": 1
+                "Ankle": 1, "Feet": 1, "Socks": 1, "Locus": 1, "Tattoo": 1,
+                "Right Hand": 1, "Left Hand": 1
             };
             
             // Initialize equipment object
@@ -965,7 +966,7 @@
             locations: ["Pin", "Head", "Hair", "Ear", "Ears", "Neck", "Shoulder", "Cloak", 
                        "Front", "Chest", "Undershirt", "Back", "Arm", "Wrist", "Hands", 
                        "Finger", "Waist", "Belt", "Legs", "Pants", "Leggings", "Ankle", 
-                       "Feet", "Socks", "Locus", "Tattoo", "Shield", "Weapon", "Off-Hand"],
+                       "Feet", "Socks", "Locus", "Tattoo", "Weapon", "Shield", "Off-Hand", "Locus"],
 
             resources:["Max Health", "Max Mana", "Max Spirit", "Max Stamina",
                       "Health Recovery", "Mana Recovery", "Spirit Recovery", "Stamina Recovery"],
@@ -1075,7 +1076,7 @@
                 Constants.resources.forEach(resource => {
                     options += `<option value="${resource}">${resource}</option>`;
                 });
-                options += '<.optgroup>';
+                options += '</optgroup>';
                 
                 return options;
             };
@@ -1315,6 +1316,9 @@
                 editItem: (id) => {
                     const item = DataModule.getItem(id);
                     if (!item) return;
+
+                    // Make sure we're getting the right item by ID
+                    console.log('Editing item:', item);
                     
                     // Populate form with item data
                     document.getElementById('itemName').value = item.name;
@@ -1444,14 +1448,39 @@
                         }
                         
                         // Get available items for dropdown
-                        const availableItems = items.filter(item => item.location === location);
+                        // Special handling for weapon/shield slots
+                        let availableItems;
+                        if (location === "Right Hand" || location === "Left Hand") {
+                            availableItems = items.filter(item => 
+                                item.location === "Weapon" || 
+                                item.location === "Shield" || 
+                                item.location === "Off-Hand"
+                            );
+                        } else {
+                            availableItems = items.filter(item => item.location === location);
+                        }
+                        
+                        // Calculate total bonus for each item
+                        availableItems = availableItems.map(item => {
+                            const totalBonus = item.targets.reduce((sum, t) => {
+                                let value = t.amount;
+                                if (Constants.stats.includes(t.target) && t.type === 'Bonus') {
+                                    value = t.amount * 2;
+                                }
+                                return sum + value;
+                            }, 0);
+                            return { ...item, totalBonus };
+                        });
+                        
+                        // Sort by total bonus descending
+                        availableItems.sort((a, b) => b.totalBonus - a.totalBonus);
                         const options = availableItems.map(item => {
                             const isEquipped = Object.values(equipment).some(slots => 
                                 slots.includes(item.id)
                             );
                             const disabled = isEquipped && item.id !== equippedId;
                             return `<option value="${item.id}" ${item.id === equippedId ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
-                                ${item.name} ${disabled ? '(Equipped)' : ''} - ${item.targets.map(t => `${t.target} +${t.amount}`).join(', ')}
+                                (${item.totalBonus}) ${item.name} ${disabled ? '(Equipped)' : ''} - ${item.targets.map(t => `${t.target} +${t.amount}`).join(', ')}
                             </option>`;
                         }).join('');
                         
@@ -1459,8 +1488,10 @@
                             <div class="slot-row">
                                 <div class="slot-location">${location}</div>
                                 <div class="slot-number ${slotClass}">${slotLabel}</div>
-                                <select class="slot-item-select ${equippedItem ? 'has-item' : ''}" 
-                                        onchange="EquipmentModule.equipItem(this.value, '${location}', ${i})">
+                                <select class="slot-item-select ${equippedItem ? 'has-item' : ''}"
+                                        id="slot-select-${location}-${i}" 
+                                        onchange="EquipmentModule.equipItem(this.value, '${location}', ${i})"
+                                        style="flex: 1;">
                                     <option value="">-- Empty --</option>
                                     ${options}
                                 </select>
@@ -1472,6 +1503,11 @@
                                         style="${equippedItem ? '' : 'visibility: hidden;'}">
                                     ✕
                                 </button>
+                                <input type="checkbox" id="nugget-${location}-${i}" 
+                                       onchange="EquipmentModule.toggleNugget('${location}', ${i})" 
+                                       title="Show all items regardless of location"
+                                       style="margin: 0 5px;">
+                                <label for="nugget-${location}-${i}" style="font-size: 0.8em; margin-right: 10px;">Nugget</label>
                             </div>
                         `;
                     }
@@ -1588,7 +1624,54 @@
                 init,
                 refresh,
                 equipItem,
-                unequip
+                unequip,
+                toggleNugget: (location, slotIndex) => {
+                    const checkbox = document.getElementById(`nugget-${location}-${slotIndex}`);
+                    const select = document.getElementById(`slot-select-${location}-${slotIndex}`);
+                    const equipment = DataModule.getEquipment();
+                    const items = DataModule.getItems();
+                    const equippedId = equipment[location][slotIndex];
+                    
+                    let availableItems;
+                    if (checkbox.checked) {
+                        // Show ALL items when nugget is checked
+                        availableItems = items;
+                    } else if (location === "Right Hand" || location === "Left Hand") {
+                        availableItems = items.filter(item => 
+                            item.location === "Weapon" || 
+                            item.location === "Shield" || 
+                            item.location === "Off-Hand"
+                        );
+                    } else {
+                        availableItems = items.filter(item => item.location === location);
+                    }
+                    
+                    // Calculate and sort by total bonus
+                    availableItems = availableItems.map(item => {
+                        const totalBonus = item.targets.reduce((sum, t) => {
+                            let value = t.amount;
+                            if (Constants.stats.includes(t.target) && t.type === 'Bonus') {
+                                value = t.amount * 2;
+                            }
+                            return sum + value;
+                        }, 0);
+                        return { ...item, totalBonus };
+                    }).sort((a, b) => b.totalBonus - a.totalBonus);
+                    
+                    // Rebuild options
+                    let options = '<option value="">-- Empty --</option>';
+                    availableItems.forEach(item => {
+                        const isEquipped = Object.values(equipment).some(slots => 
+                            slots.includes(item.id)
+                        );
+                        const disabled = isEquipped && item.id !== equippedId;
+                        options += `<option value="${item.id}" ${item.id === equippedId ? 'selected' : ''} ${disabled ? 'disabled' : ''}>
+                            (${item.totalBonus}) ${item.name} [${item.location}] ${disabled ? '(Equipped)' : ''}
+                        </option>`;
+                    });
+                    
+                    select.innerHTML = options;
+                }
             };
         })();
         
@@ -1877,6 +1960,8 @@
                         <div class="stat-group-title">🎯 Quick Actions</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                             <button class="btn btn-primary" onclick="AnalysisModule.findBestItems()">Find Best Items</button>
+                            <button class="btn btn-primary" onclick="AnalysisModule.findBestItemsOverall(true)">Best Items (All)</button>
+                            <button class="btn btn-primary" onclick="AnalysisModule.findBestItemsOverall(false)">Best Items (Unequipped)</button>
                             <button class="btn btn-primary" onclick="AnalysisModule.showDuplicates()">Show Duplicate Slots</button>
                             <button class="btn btn-primary" onclick="AnalysisModule.optimizeLoadout()">Optimize Loadout</button>
                             <button class="btn btn-primary" onclick="AnalysisModule.exportLoadout()">Export Current Loadout</button>
@@ -1926,6 +2011,55 @@
                 
                 resultsContainer.innerHTML = html;
             };
+
+            const findBestItemsOverall = (includeEquipped = true) => {
+                const items = DataModule.getItems();
+                const equipment = DataModule.getEquipment();
+                const resultsContainer = document.getElementById('analysisResults');
+                
+                // Get all equipped item IDs
+                const equippedIds = new Set();
+                Object.values(equipment).forEach(slots => {
+                    slots.forEach(id => {
+                        if (id) equippedIds.add(id);
+                    });
+                });
+                
+                // Filter items based on includeEquipped
+                let filteredItems = includeEquipped ? items : items.filter(item => !equippedIds.has(item.id));
+                
+                // Calculate total bonus for each item
+                const itemsWithBonus = filteredItems.map(item => {
+                    const totalBonus = item.targets.reduce((sum, t) => {
+                        let value = t.amount;
+                        if (Constants.stats.includes(t.target) && t.type === 'Bonus') {
+                            value = t.amount * 2;
+                        }
+                        return sum + value;
+                    }, 0);
+                    return { ...item, totalBonus };
+                }).sort((a, b) => b.totalBonus - a.totalBonus);
+                
+                let html = `<div class="stat-group-title">🏆 Best Items Overall ${includeEquipped ? '(All)' : '(Unequipped Only)'}</div>`;
+                
+                itemsWithBonus.slice(0, 20).forEach(item => {
+                    const isEquipped = equippedIds.has(item.id);
+                    html += `
+                        <div class="summary-item" style="margin: 10px 0;">
+                            <span class="summary-target">
+                                <strong>(${item.totalBonus}) ${item.name}</strong> 
+                                [${item.location}] 
+                                ${isEquipped ? '<span style="color: var(--success);">✓ Equipped</span>' : ''}
+                            </span>
+                        </div>
+                        <div style="margin-left: 20px; margin-bottom: 15px;">
+                            ${item.targets.map(t => `<span class="enhancive-item">${t.target} +${t.amount} ${t.type}</span>`).join('')}
+                        </div>
+                    `;
+                });
+                
+                resultsContainer.innerHTML = html;
+            };
             
             const showDuplicates = () => {
                 const items = DataModule.getItems();
@@ -1950,6 +2084,18 @@
                 
                 duplicates.forEach(([location, count]) => {
                     const locationItems = items.filter(i => i.location === location);
+                    // Calculate total bonus and sort
+                    const itemsWithBonus = locationItems.map(item => {
+                        const totalBonus = item.targets.reduce((sum, t) => {
+                            let value = t.amount;
+                            if (Constants.stats.includes(t.target) && t.type === 'Bonus') {
+                                value = t.amount * 2;
+                            }
+                            return sum + value;
+                        }, 0);
+                        return { ...item, totalBonus };
+                    }).sort((a, b) => b.totalBonus - a.totalBonus);
+
                     html += `
                         <div style="margin: 20px 0;">
                             <div class="summary-item">
@@ -1957,10 +2103,10 @@
                                 <span class="summary-value">${count} items</span>
                             </div>
                             <div style="margin: 10px 0 0 20px;">
-                                ${locationItems.map(item => `
+                                ${itemsWithBonus.map(item => `
                                     <div style="padding: 5px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
-                                        <strong>${item.name}</strong> - 
-                                        ${item.targets.map(t => `${t.target} +${t.amount}`).join(', ')}
+                                        <strong>(${item.totalBonus}) ${item.name}</strong> - 
+                                        ${item.targets.map(t => `${t.target} +${t.amount} ${t.type}`).join(', ')}
                                     </div>
                                 `).join('')}
                             </div>
@@ -2023,6 +2169,7 @@
             return {
                 refresh,
                 findBestItems,
+                findBestItemsOverall,
                 showDuplicates,
                 optimizeLoadout,
                 exportLoadout
@@ -2096,13 +2243,19 @@
             StatsModule.updateStats();
             
             // Add refresh handlers for other tabs
-            document.querySelector('[onclick*="analysis"]').addEventListener('click', () => {
-                AnalysisModule.refresh();
-            });
+            const analysisTab = document.querySelector('[onclick*="analysis"]');
+            if (analysisTab) {
+                analysisTab.addEventListener('click', () => {
+                    AnalysisModule.refresh();
+                });
+            }
             
-            document.querySelector('[onclick*="settings"]').addEventListener('click', () => {
-                SettingsModule.refresh();
-            });
+            const settingsTab = document.querySelector('[onclick*="settings"]');
+            if (settingsTab) {
+                settingsTab.addEventListener('click', () => {
+                    SettingsModule.refresh();
+                });
+            }
         });
     </script>
 </body>
