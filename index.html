@@ -826,18 +826,26 @@
                 equipment[location] = Array(count).fill(null);
             }
             
+
             // Load data from localStorage
             const loadData = () => {
-                const savedItems = localStorage.getItem('enhanciveItems');
-                const savedEquipment = localStorage.getItem('enhanciveEquipment');
-                
-                if (savedItems) {
-                    items = JSON.parse(savedItems);
-                    nextId = items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1;
-                }
-                
-                if (savedEquipment) {
-                    equipment = JSON.parse(savedEquipment);
+                try {
+                    const savedItems = localStorage.getItem('enhanciveItems');
+                    const savedEquipment = localStorage.getItem('enhanciveEquipment');
+                    
+                    if (savedItems) {
+                        items = JSON.parse(savedItems);
+                        nextId = items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1;
+                    }
+                    
+                    if (savedEquipment) {
+                        equipment = JSON.parse(savedEquipment);
+                    }
+                } catch (error) {
+                    console.warn('LocalStorage not available, using in-memory storage');
+                    // Initialize with empty data
+                    items = [];
+                    nextId = 1;
                 }
             };
             
@@ -966,7 +974,7 @@
             locations: ["Pin", "Head", "Hair", "Ear", "Ears", "Neck", "Shoulder", "Cloak", 
                        "Front", "Chest", "Undershirt", "Back", "Arm", "Wrist", "Hands", 
                        "Finger", "Waist", "Belt", "Legs", "Pants", "Leggings", "Ankle", 
-                       "Feet", "Socks", "Locus", "Tattoo", "Weapon", "Shield", "Off-Hand", "Locus"],
+                       "Feet", "Socks", "Locus", "Tattoo", "Weapon", "Shield", "Off-Hand"],
 
             resources:["Max Health", "Max Mana", "Max Spirit", "Max Stamina",
                       "Health Recovery", "Mana Recovery", "Spirit Recovery", "Stamina Recovery"],
