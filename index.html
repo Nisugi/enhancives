@@ -866,6 +866,16 @@
                     return item;
                 },
                 
+                editItem: (id, updates) => {
+                    const itemIndex = items.findIndex(i => i.id === id);
+                    if (itemIndex !== -1) {
+                        items[itemIndex] = { ...items[itemIndex], ...updates };
+                        saveData();
+                        return items[itemIndex];
+                    }
+                    return null;
+                },
+
                 deleteItem: (id) => {
                     // Remove from items
                     items = items.filter(i => i.id !== id);
@@ -955,10 +965,10 @@
             locations: ["Pin", "Head", "Hair", "Ear", "Ears", "Neck", "Shoulder", "Cloak", 
                        "Front", "Chest", "Undershirt", "Back", "Arm", "Wrist", "Hands", 
                        "Finger", "Waist", "Belt", "Legs", "Pants", "Leggings", "Ankle", 
-                       "Feet", "Socks", "Locus", "Tattoo"],
+                       "Feet", "Socks", "Locus", "Tattoo", "Shield", "Weapon", "Off-Hand"],
 
-            resources:["Max Health", "Max Mana", "Max Spirit", "Max Stamina", "Health Regen",
-                      "Mana Recovery", "Spirit Recovery", "Stamina Recovery"],
+            resources:["Max Health", "Max Mana", "Max Spirit", "Max Stamina",
+                      "Health Recovery", "Mana Recovery", "Spirit Recovery", "Stamina Recovery"],
                        
             stats: ["Strength", "Constitution", "Dexterity", "Agility", "Discipline",
                    "Aura", "Logic", "Intuition", "Wisdom", "Influence"],
@@ -986,8 +996,18 @@
             
             boostTypes: ["Base", "Bonus", "Ranks", "Recovery"],
             permanenceTypes: ["Permanent", "Crumbly"],
-            statCap: 50,
-            skillCap: 50
+            statCap: 40,
+            skillCap: 50,
+            resourceCaps: {
+                "Max Health": 300,
+                "Max Stamina": 300,
+                "Max Mana": 600,
+                "Max Spirit": 3,
+                "Health Regen": 50,
+                "Mana Recovery": 50,
+                "Spirit Recovery": 3,
+                "Stamina Recovery": 50
+            }
         };
         
         // ==================== UI MODULE ====================
@@ -1251,9 +1271,13 @@
                             ).join('')}
                         </div>
                         
-                        ${item.notes ? `<div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px; color: var(--gray); font-size: 0.9em; font-style: italic;">${item.notes}</div>` : ''}
-                        
+                        ${item.notes ? `<div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px; color: var(--gray); font-size: 0.9em; font-style: italic;">
+                            <span id="notes-${item.id}">${item.notes}</span>
+                            <button onclick="ItemsModule.editNotes(${item.id})" style="float: right; background: none; border: none; color: var(--primary); cursor: pointer;">✏️</button>
+                        </div>` : ''}
+
                         <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="ItemsModule.editItem(${item.id})" style="padding: 8px 16px; font-size: 0.9em;">Edit</button>
                             <button class="btn btn-danger" onclick="ItemsModule.deleteItem(${item.id})">Delete</button>
                         </div>
                     </div>
@@ -1288,6 +1312,94 @@
                 addTargetRow,
                 removeTarget,
                 saveItem,
+                editItem: (id) => {
+                    const item = DataModule.getItem(id);
+                    if (!item) return;
+                    
+                    // Populate form with item data
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemLocation').value = item.location;
+                    document.getElementById('itemPermanence').value = item.permanence;
+                    document.getElementById('itemNotes').value = item.notes || '';
+                    
+                    // Clear and populate targets
+                    const container = document.getElementById('targetsContainer');
+                    container.innerHTML = '';
+                    
+                    item.targets.forEach(target => {
+                        addTargetRow();
+                        const rows = container.querySelectorAll('.target-row');
+                        const lastRow = rows[rows.length - 1];
+                        lastRow.querySelector('.target-select').value = target.target;
+                        lastRow.querySelector('.type-select').value = target.type;
+                        lastRow.querySelector('.amount-input').value = target.amount;
+                    });
+                    
+                    updateRemoveButtons();
+                    
+                    // Change save button to update
+                    const saveBtn = document.querySelector('.btn-primary[onclick*="saveItem"]');
+                    saveBtn.textContent = 'Update Item';
+                    saveBtn.setAttribute('onclick', `ItemsModule.updateItem(${id})`);
+                    
+                    // Scroll to form
+                    document.getElementById('itemForm').scrollIntoView({ behavior: 'smooth' });
+                },
+                updateItem: (id) => {
+                    const name = document.getElementById('itemName').value.trim();
+                    const location = document.getElementById('itemLocation').value;
+                    const permanence = document.getElementById('itemPermanence').value;
+                    const notes = document.getElementById('itemNotes').value.trim();
+                    
+                    if (!name || !location) {
+                        UI.showNotification('Please enter item name and location', 'error');
+                        return;
+                    }
+                    
+                    const targets = [];
+                    document.querySelectorAll('.target-row').forEach(row => {
+                        const target = row.querySelector('.target-select').value;
+                        const type = row.querySelector('.type-select').value;
+                        const amount = parseInt(row.querySelector('.amount-input').value);
+                        
+                        if (target && amount) {
+                            targets.push({ target, type, amount });
+                        }
+                    });
+                    
+                    if (targets.length === 0) {
+                        UI.showNotification('Please add at least one enhancive target', 'error');
+                        return;
+                    }
+                    
+                    // Update item
+                    DataModule.editItem(id, { name, location, permanence, notes, targets });
+                    
+                    // Reset form
+                    clearForm();
+                    
+                    // Reset save button
+                    const saveBtn = document.querySelector('.btn-primary[onclick*="updateItem"]');
+                    saveBtn.textContent = 'Save Item';
+                    saveBtn.setAttribute('onclick', 'ItemsModule.saveItem()');
+                    
+                    // Refresh displays
+                    renderItemsList();
+                    EquipmentModule.refresh();
+                    StatsModule.updateStats();
+                    TotalsModule.refresh();
+                    
+                    UI.showNotification('Item updated successfully!');
+                },
+                editNotes: (id) => {
+                    const item = DataModule.getItem(id);
+                    const newNotes = prompt('Edit notes:', item.notes || '');
+                    if (newNotes !== null) {
+                        DataModule.editItem(id, { notes: newNotes });
+                        renderItemsList();
+                        UI.showNotification('Notes updated');
+                    }
+                },
                 deleteItem,
                 searchItems
             };
@@ -1497,14 +1609,21 @@
                             const item = items.find(i => i.id === itemId);
                             if (item) {
                                 item.targets.forEach(t => {
-                                    // Convert ranks to bonus for skills
                                     let amount = t.amount;
-                                    if (t.type === 'Ranks' && !Constants.stats.includes(t.target)) {
-                                        // Ranks count as bonus for skills
-                                        totals[t.target] = (totals[t.target] || 0) + amount;
-                                    } else if (t.type === 'Base' || t.type === 'Bonus') {
-                                        totals[t.target] = (totals[t.target] || 0) + amount;
+                                    // For stats: Base = +1 per point, Bonus = +2 per point
+                                    if (Constants.stats.includes(t.target)) {
+                                        if (t.type === 'Base') {
+                                            amount = t.amount * 1;  // Base counts as 1
+                                        } else if (t.type === 'Bonus') {
+                                            amount = t.amount * 2;  // Bonus counts as 2
+                                        }
+                                    } 
+                                    // For skills: Both Bonus and Ranks count as +1
+                                    else if (t.type === 'Ranks' || t.type === 'Bonus') {
+                                        amount = t.amount * 1;
                                     }
+                                    
+                                    totals[t.target] = (totals[t.target] || 0) + amount;
                                 });
                             }
                         }
@@ -1590,6 +1709,47 @@
                     html += '</div>';
                 }
                 
+                // Render resources section if any are enhanced
+                const hasResources = Constants.resources.some(resource => totals[resource] > 0);
+                if (hasResources) {
+                    html += `<div class="stat-group"><div class="stat-group-title">💎 RESOURCES</div>`;
+                    
+                    Constants.resources.forEach(resource => {
+                        const value = totals[resource] || 0;
+                        if (value === 0) return;
+                        
+                        const cap = Constants.resourceCaps[resource];
+                        const percentage = Math.min(100, (value / cap) * 100);
+                        
+                        let valueClass = 'normal';
+                        let fillClass = '';
+                        
+                        if (value >= cap) {
+                            valueClass = 'capped';
+                            fillClass = 'capped';
+                        }
+                        if (value > cap) {
+                            valueClass = 'overcap';
+                            fillClass = 'overcap';
+                        }
+                        
+                        html += `
+                            <div class="stat-row">
+                                <div class="stat-name">${resource}</div>
+                               <div class="stat-value ${valueClass}">${value}/${cap}</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill ${fillClass}" style="width: ${percentage}%">
+                                        ${Math.round(percentage)}%
+                                    </div>
+                                </div>
+                                <div class="stat-cap">${value > cap ? `+${value - cap} over` : value === cap ? 'CAPPED' : ''}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+
                 container.innerHTML = html || '<div class="empty-state"><h3>No enhancives active</h3><p>Equip items to see your progress</p></div>';
                 
                 // Cap Analysis
