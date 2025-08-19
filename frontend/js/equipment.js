@@ -273,6 +273,16 @@ const EquipmentModule = (() => {
         if (!container) return;
         
         const totals = DataModule.calculateTotalEnhancements();
+        const equippedItems = DataModule.getEquippedItems();
+        const equipment = DataModule.getEquipment();
+        
+        // Calculate equipment stats
+        const equipmentStats = {
+            totalEquipped: equippedItems.length,
+            totalTargets: equippedItems.reduce((sum, item) => sum + (item.targets ? item.targets.length : 0), 0),
+            filledSlots: Object.values(equipment).flat().filter(slot => slot !== null).length,
+            totalEnhancement: Object.values(totals).reduce((sum, value) => sum + Math.abs(value), 0)
+        };
         
         if (Object.keys(totals).length === 0) {
             container.innerHTML = `
@@ -302,6 +312,14 @@ const EquipmentModule = (() => {
         });
         
         container.innerHTML = `
+            <div class="equipment-stats" style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 1em; color: var(--dark); font-weight: 600;">
+                    ${equipmentStats.filledSlots}/57 slots • ${equipmentStats.totalTargets} targets
+                </div>
+                <div style="font-size: 1.1em; color: var(--primary); font-weight: bold; margin-top: 5px;">
+                    +${equipmentStats.totalEnhancement} enhanced
+                </div>
+            </div>
             <div class="summary-grid">
                 ${Object.keys(grouped.stats).length > 0 ? `
                     <div class="summary-section">
@@ -342,13 +360,168 @@ const EquipmentModule = (() => {
         `;
     };
     
+    // ==================== LOADOUTS FUNCTIONALITY ====================
+    const getLoadouts = () => {
+        return JSON.parse(localStorage.getItem('equipmentLoadouts') || '{}');
+    };
+    
+    const saveLoadouts = (loadouts) => {
+        localStorage.setItem('equipmentLoadouts', JSON.stringify(loadouts));
+    };
+    
+    const refreshLoadoutDropdown = () => {
+        const select = document.getElementById('loadoutSelect');
+        if (!select) return;
+        
+        const loadouts = getLoadouts();
+        const loadoutNames = Object.keys(loadouts);
+        
+        select.innerHTML = `
+            <option value="">Select Loadout...</option>
+            ${loadoutNames.map(name => `<option value="${name}">${name}</option>`).join('')}
+        `;
+    };
+    
+    const saveLoadout = () => {
+        const name = prompt('Enter a name for this loadout:');
+        if (!name || name.trim() === '') {
+            UI.showNotification('Loadout name cannot be empty', 'warning');
+            return;
+        }
+        
+        const trimmedName = name.trim();
+        const equipment = DataModule.getEquipment();
+        const loadouts = getLoadouts();
+        
+        // Check if loadout already exists
+        if (loadouts[trimmedName]) {
+            if (!confirm(`Loadout "${trimmedName}" already exists. Overwrite it?`)) {
+                return;
+            }
+        }
+        
+        loadouts[trimmedName] = { ...equipment };
+        saveLoadouts(loadouts);
+        refreshLoadoutDropdown();
+        
+        UI.showNotification(`Loadout "${trimmedName}" saved!`, 'success');
+    };
+    
+    const loadLoadout = () => {
+        const select = document.getElementById('loadoutSelect');
+        const loadoutName = select?.value;
+        
+        if (!loadoutName) {
+            UI.showNotification('Please select a loadout to load', 'warning');
+            return;
+        }
+        
+        const loadouts = getLoadouts();
+        const loadout = loadouts[loadoutName];
+        
+        if (!loadout) {
+            UI.showNotification('Loadout not found', 'error');
+            return;
+        }
+        
+        if (!confirm(`Load loadout "${loadoutName}"? This will replace your current equipment.`)) {
+            return;
+        }
+        
+        DataModule.saveEquipment(loadout);
+        renderEquipmentSlots();
+        
+        // Refresh related modules
+        if (typeof TotalsModule !== 'undefined') TotalsModule.refresh();
+        if (typeof StatsModule !== 'undefined') StatsModule.updateStats();
+        
+        UI.showNotification(`Loadout "${loadoutName}" loaded!`, 'success');
+    };
+    
+    const deleteLoadout = async () => {
+        const select = document.getElementById('loadoutSelect');
+        const loadoutName = select?.value;
+        
+        if (!loadoutName) {
+            UI.showNotification('Please select a loadout to delete', 'warning');
+            return;
+        }
+        
+        if (!confirm(`Delete loadout "${loadoutName}"? This cannot be undone.`)) {
+            return;
+        }
+        
+        // Delete from local storage
+        const loadouts = getLoadouts();
+        delete loadouts[loadoutName];
+        saveLoadouts(loadouts);
+        refreshLoadoutDropdown();
+        
+        // Delete from cloud if authenticated
+        if (typeof AuthModule !== 'undefined' && AuthModule.isAuthenticated()) {
+            try {
+                const token = AuthModule.getToken();
+                const response = await fetch(`${Config.API_URL}/loadouts/by-name/${encodeURIComponent(loadoutName)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.warn('Failed to delete cloud loadout:', response.status);
+                    UI.showNotification(`Loadout "${loadoutName}" deleted locally, but failed to delete from cloud`, 'warning');
+                    return;
+                }
+            } catch (error) {
+                console.warn('Error deleting cloud loadout:', error);
+                UI.showNotification(`Loadout "${loadoutName}" deleted locally, but failed to delete from cloud`, 'warning');
+                return;
+            }
+        }
+        
+        UI.showNotification(`Loadout "${loadoutName}" deleted!`, 'success');
+    };
+    
+    const unequipAll = () => {
+        if (!confirm('Unequip all items? This will clear all your equipment slots.')) {
+            return;
+        }
+        
+        // Create empty equipment structure
+        const emptyEquipment = {};
+        Constants.locations.forEach(location => {
+            const slotCount = Constants.wearLocations[location] || 1;
+            emptyEquipment[location] = new Array(slotCount).fill(null);
+        });
+        
+        DataModule.saveEquipment(emptyEquipment);
+        renderEquipmentSlots();
+        
+        // Refresh related modules
+        if (typeof TotalsModule !== 'undefined') TotalsModule.refresh();
+        if (typeof StatsModule !== 'undefined') StatsModule.updateStats();
+        
+        UI.showNotification('All items unequipped!', 'success');
+    };
+    
     return {
-        init,
+        init: async () => {
+            await loadMarketplaceItems();
+            renderEquipmentSlots();
+            refreshLoadoutDropdown();
+        },
         refresh: renderEquipmentSlots,
         equipItem,
         unequipItem,
         toggleShowAll,
         toggleMarketplace,
-        loadMarketplaceItems
+        loadMarketplaceItems,
+        saveLoadout,
+        loadLoadout,
+        deleteLoadout,
+        unequipAll,
+        refreshLoadoutDropdown
     };
 })();

@@ -52,15 +52,12 @@ const MarketplaceModule = (() => {
                 
                 <div id="marketplace-listings-tab" class="marketplace-tab-panel active">
                     <div class="panel">
-                        <div style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                            <button class="btn btn-success" onclick="MarketplaceModule.listAllUnequipped()">
+                        <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: stretch;">
+                            <button class="btn btn-success" onclick="MarketplaceModule.toggleListAllUnequipped()" style="flex: 1; height: 48px; min-height: 48px;" id="toggleListBtn">
                                 📋 List All Unequipped
                             </button>
-                            <button class="btn btn-warning" onclick="MarketplaceModule.unlistAll()">
-                                📤 Unlist All
-                            </button>
-                            <button class="btn btn-primary" onclick="MarketplaceModule.updateMarketplace()">
-                                🔄 Update Marketplace
+                            <button class="btn btn-primary" onclick="MarketplaceModule.updateMarketplace()" style="flex: 1; height: 48px; min-height: 48px;">
+                                🔄 Update
                             </button>
                         </div>
                         <div id="userListings"></div>
@@ -70,9 +67,24 @@ const MarketplaceModule = (() => {
                 <div id="marketplace-browse-tab" class="marketplace-tab-panel">
                     <div class="panel">
                         <div class="search-bar-container" style="margin-bottom: 20px;">
-                            <input type="text" class="search-bar" placeholder="🔍 Search marketplace..." 
-                                   onkeyup="MarketplaceModule.searchMarketplace(this.value)">
-                            <button class="btn btn-primary" onclick="MarketplaceModule.loadMarketplace()">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: stretch;">
+                                <input type="text" class="search-bar" placeholder="🔍 Search marketplace..." 
+                                       onkeyup="MarketplaceModule.searchMarketplace(this.value)" style="flex: 2; height: 40px;">
+                                <select id="marketplaceSortSelect" onchange="MarketplaceModule.sortMarketplace()" style="flex: 1; height: 40px;">
+                                    <option value="">Sort by...</option>
+                                    <option value="name">Name</option>
+                                    <option value="location">Location</option>
+                                    <option value="targets">Enhancive Count</option>
+                                    <option value="permanence">Permanence</option>
+                                    <option value="total">Total Enhancement</option>
+                                    <option value="username">Owner</option>
+                                </select>
+                                <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                    <input type="checkbox" id="marketplaceReverseSort" onchange="MarketplaceModule.sortMarketplace()">
+                                    Reverse
+                                </label>
+                            </div>
+                            <button class="btn btn-primary" onclick="MarketplaceModule.loadMarketplace()" style="width: 100%;">
                                 🔄 Refresh
                             </button>
                         </div>
@@ -83,6 +95,7 @@ const MarketplaceModule = (() => {
         `;
         
         renderUserListings();
+        updateToggleButton();
         await loadMarketplace();
     };
     
@@ -187,15 +200,16 @@ const MarketplaceModule = (() => {
                 <div class="item-header">
                     <div>
                         <div class="item-name">${item.name}</div>
-                        <div style="color: var(--gray); font-size: 0.85em;">
-                            Listed by: ${item.username}
-                        </div>
+                        <div style="color: var(--primary); font-size: 0.9em; font-weight: 600;">+${item.targets?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0} total enhancement</div>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <div class="item-location">${item.location}</div>
-                        <span class="permanence-badge ${item.permanence.toLowerCase()}">
-                            ${item.permanence}
-                        </span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div class="item-location">${item.location}</div>
+                            <span class="permanence-badge ${item.permanence.toLowerCase()}">
+                                ${item.permanence}
+                            </span>
+                        </div>
+                        <div style="color: var(--gray); font-size: 0.85em;">by ${item.username}</div>
                     </div>
                 </div>
                 
@@ -222,6 +236,106 @@ const MarketplaceModule = (() => {
     
     const searchMarketplace = (query) => {
         renderMarketplaceItems(query);
+    };
+    
+    const sortMarketplace = () => {
+        const sortBy = document.getElementById('marketplaceSortSelect')?.value;
+        const reverse = document.getElementById('marketplaceReverseSort')?.checked || false;
+        
+        if (!sortBy) {
+            renderMarketplaceItems(); // Reset to original order
+            return;
+        }
+        
+        let sortedItems = [...marketplaceItems];
+        
+        switch (sortBy) {
+            case 'name':
+                sortedItems.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case 'location':
+                sortedItems.sort((a, b) => a.location.localeCompare(b.location));
+                break;
+            case 'targets':
+                sortedItems.sort((a, b) => (b.targets?.length || 0) - (a.targets?.length || 0));
+                break;
+            case 'permanence':
+                // Sort by permanence: Persists, Temporary
+                const permOrder = { 'Persists': 0, 'Temporary': 1 };
+                sortedItems.sort((a, b) => permOrder[a.permanence] - permOrder[b.permanence]);
+                break;
+            case 'total':
+                // Sort by total enhancement value
+                sortedItems.sort((a, b) => {
+                    const totalA = a.targets?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
+                    const totalB = b.targets?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
+                    return totalB - totalA; // Descending order
+                });
+                break;
+            case 'username':
+                sortedItems.sort((a, b) => a.username.localeCompare(b.username));
+                break;
+        }
+        
+        // Apply reverse if checked
+        if (reverse) {
+            sortedItems.reverse();
+        }
+        
+        renderSortedMarketplaceItems(sortedItems);
+    };
+    
+    const renderSortedMarketplaceItems = (sortedItems) => {
+        const container = document.getElementById('marketplaceItems');
+        if (!container) return;
+        
+        if (sortedItems.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>No marketplace items available</h3>
+                    <p>Check back later for new listings</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = sortedItems.map(item => `
+            <div class="item-card">
+                <div class="item-header">
+                    <div>
+                        <div class="item-name">${item.name}</div>
+                        <div style="color: var(--primary); font-size: 0.9em; font-weight: 600;">+${item.targets?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0} total enhancement</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div class="item-location">${item.location}</div>
+                            <span class="permanence-badge ${item.permanence.toLowerCase()}">
+                                ${item.permanence}
+                            </span>
+                        </div>
+                        <div style="color: var(--gray); font-size: 0.85em;">by ${item.username}</div>
+                    </div>
+                </div>
+                
+                <div class="enhancive-list">
+                    ${item.targets.map(t => 
+                        `<span class="enhancive-item">${t.target} ${t.amount > 0 ? '+' : ''}${t.amount} ${t.type}</span>`
+                    ).join('')}
+                </div>
+                
+                ${item.notes ? `
+                    <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px; color: var(--gray); font-size: 0.9em; font-style: italic;">
+                        ${item.notes}
+                    </div>
+                ` : ''}
+                
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="MarketplaceModule.copyItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                        📋 Copy to My Items
+                    </button>
+                </div>
+            </div>
+        `).join('');
     };
     
     const updateMarketplace = async () => {
@@ -346,6 +460,7 @@ const MarketplaceModule = (() => {
         } else {
             UI.showNotification(`${listedCount} unequipped items marked for listing`, 'success');
             renderUserListings();
+            updateToggleButton();
             
             // Refresh items module if visible
             if (typeof ItemsModule !== 'undefined') {
@@ -377,10 +492,47 @@ const MarketplaceModule = (() => {
         
         UI.showNotification(`${listedItems.length} items unlisted from marketplace`, 'success');
         renderUserListings();
+        updateToggleButton();
         
         // Refresh items module if visible
         if (typeof ItemsModule !== 'undefined') {
             ItemsModule.refresh();
+        }
+    };
+    
+    const toggleListAllUnequipped = () => {
+        if (!AuthModule.isAuthenticated()) {
+            UI.showNotification('Please login to manage listings', 'warning');
+            AuthModule.showLoginModal();
+            return;
+        }
+        
+        const items = DataModule.getItems();
+        const listedItems = items.filter(item => item.isListed);
+        
+        // If we have listed items, unlist all. Otherwise, list all unequipped
+        if (listedItems.length > 0) {
+            unlistAll();
+        } else {
+            listAllUnequipped();
+        }
+        
+        updateToggleButton();
+    };
+    
+    const updateToggleButton = () => {
+        const btn = document.getElementById('toggleListBtn');
+        if (!btn) return;
+        
+        const items = DataModule.getItems();
+        const listedItems = items.filter(item => item.isListed);
+        
+        if (listedItems.length > 0) {
+            btn.innerHTML = '📤 Unlist All';
+            btn.className = 'btn btn-warning';
+        } else {
+            btn.innerHTML = '📋 List All Unequipped';
+            btn.className = 'btn btn-success';
         }
     };
     
@@ -411,10 +563,13 @@ const MarketplaceModule = (() => {
         loadMarketplace,
         updateMarketplace,
         searchMarketplace,
+        sortMarketplace,
         copyItem,
         unlistItem,
         listAllUnequipped,
         unlistAll,
+        toggleListAllUnequipped,
+        updateToggleButton,
         switchMarketplaceTab
     };
 })();

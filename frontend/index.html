@@ -40,34 +40,9 @@
             <button class="nav-tab active" onclick="UI.switchTab('items')">📦 Items</button>
             <button class="nav-tab" onclick="UI.switchTab('equipment')">⚔️ Equipment</button>
             <button class="nav-tab" onclick="UI.switchTab('totals')">📊 Totals</button>
-            <button class="nav-tab" onclick="UI.switchTab('analysis')">📈 Analysis</button>
             <button class="nav-tab" onclick="UI.switchTab('copies')">🧙‍♂️ Sylinaar</button>
             <button class="nav-tab" id="marketplaceTab" onclick="UI.switchTab('marketplace')" style="display: none;">🏪 Marketplace</button>
             <button class="nav-tab" onclick="UI.switchTab('settings')">⚙️ Settings</button>
-        </div>
-        
-        <!-- Statistics Bar -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <div class="value" id="totalItems">0</div>
-                <div class="label">Total Items</div>
-            </div>
-            <div class="stat-card">
-                <div class="value" id="totalEquipped">0</div>
-                <div class="label">Equipped</div>
-            </div>
-            <div class="stat-card">
-                <div class="value" id="filledSlots">0</div>
-                <div class="label">Slots Filled</div>
-            </div>
-            <div class="stat-card">
-                <div class="value" id="totalEnhancives">0</div>
-                <div class="label">Active Enhancives</div>
-            </div>
-            <div class="stat-card">
-                <div class="value" id="cappedStats">0</div>
-                <div class="label">Capped Stats</div>
-            </div>
         </div>
         
         <!-- Items Tab -->
@@ -78,8 +53,25 @@
                     <div id="itemForm"></div>
                 </div>
                 <div class="panel">
-                    <h2 class="section-title">Your Items</h2>
-                    <input type="text" class="search-bar" placeholder="🔍 Search items..." onkeyup="ItemsModule.searchItems(this.value)">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 class="section-title" style="margin: 0;">Your Items</h2>
+                        <span id="totalItemsCount" style="color: var(--gray); font-weight: 600;"></span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch;">
+                        <input type="text" class="search-bar" placeholder="🔍 Search items..." onkeyup="ItemsModule.searchItems(this.value)" style="flex: 2; height: 40px;">
+                        <select id="itemsSortSelect" onchange="ItemsModule.sortItems()" style="flex: 1; height: 40px;">
+                            <option value="">Sort by...</option>
+                            <option value="name">Name</option>
+                            <option value="location">Location</option>
+                            <option value="targets">Enhancive Count</option>
+                            <option value="permanence">Permanence</option>
+                            <option value="total">Total Enhancement</option>
+                        </select>
+                        <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap;">
+                            <input type="checkbox" id="itemsReverseSort" onchange="ItemsModule.sortItems()">
+                            Reverse
+                        </label>
+                    </div>
                     <div id="itemsList" class="items-grid"></div>
                 </div>
             </div>
@@ -90,6 +82,17 @@
             <div class="equipment-layout">
                 <div class="panel">
                     <h2 class="section-title">Equipment Slots (57 Total)</h2>
+                    <div class="equipment-controls">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch;">
+                            <select id="loadoutSelect" style="flex: 2; min-width: 150px; height: 48px;">
+                                <option value="">Select Loadout...</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="EquipmentModule.loadLoadout()" style="flex: 1; height: 48px; min-height: 48px;">Load</button>
+                            <button class="btn btn-success" onclick="EquipmentModule.saveLoadout()" style="flex: 1; height: 48px; min-height: 48px;">Save</button>
+                            <button class="btn btn-warning" onclick="EquipmentModule.deleteLoadout()" style="flex: 1; height: 48px; min-height: 48px;">Delete</button>
+                            <button class="btn btn-danger" onclick="EquipmentModule.unequipAll()" style="flex: 1; height: 48px; min-height: 48px;">Unequip All</button>
+                        </div>
+                    </div>
                     <div id="equipmentSlots" class="slots-container"></div>
                 </div>
                 <div class="panel">
@@ -110,14 +113,6 @@
                     <h2 class="section-title">Cap Analysis</h2>
                     <div id="capAnalysis"></div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Analysis Tab -->
-        <div id="analysis-tab" class="tab-panel">
-            <div class="panel">
-                <h2 class="section-title">Analysis & Optimization</h2>
-                <div id="analysisContent"></div>
             </div>
         </div>
         
@@ -157,7 +152,6 @@
     <script src="js/items.js"></script>
     <script src="js/equipment.js"></script>
     <script src="js/totals.js"></script>
-    <script src="js/analysis.js"></script>
     <script src="js/copies.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/auth.js"></script>

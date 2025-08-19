@@ -88,6 +88,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     overflow-x: auto;
+    justify-content: center;
 }
 
 .nav-tab {
@@ -378,7 +379,7 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     align-items: stretch;
-    min-height: 600px;
+    min-height: 800px;
 }
 
 @media (max-width: 1200px) {
@@ -390,9 +391,7 @@ body {
 .slots-container {
     display: grid;
     gap: 10px;
-    height: calc(100% - 60px); /* Subtract space for section title */
-    overflow-y: auto;
-    padding-right: 10px;
+    height: auto; /* Let it use natural height */
 }
 
 .slot-row {
@@ -863,6 +862,12 @@ body {
     
     .header h1 {
         font-size: 2em;
+    }
+    
+    
+    /* Disable sticky behavior on mobile */
+    .panel-sticky {
+        position: static;
     }
     
     .nav-tabs {
