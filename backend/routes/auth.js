@@ -57,9 +57,22 @@ router.post('/register', async (req, res) => {
             }
         });
 
+        // Generate a simple token containing user ID and username
+        const tokenData = { 
+            userId: result.id, 
+            username: result.username 
+        };
+        const tokenString = JSON.stringify(tokenData);
+        const token = Buffer.from(tokenString).toString('base64');
+        
+        console.log('Generated token data:', tokenData);
+        console.log('Generated token string:', tokenString);
+        console.log('Generated token (base64):', token);
+        
         res.json({ 
             success: true, 
-            user: { id: result.id, username: result.username }
+            user: { id: result.id, username: result.username },
+            token: token
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -109,9 +122,22 @@ router.post('/login', async (req, res) => {
             }
         });
 
+        // Generate a simple token containing user ID and username
+        const tokenData = { 
+            userId: result.id, 
+            username: result.username 
+        };
+        const tokenString = JSON.stringify(tokenData);
+        const token = Buffer.from(tokenString).toString('base64');
+        
+        console.log('Generated token data:', tokenData);
+        console.log('Generated token string:', tokenString);
+        console.log('Generated token (base64):', token);
+        
         res.json({ 
             success: true, 
-            user: { id: result.id, username: result.username }
+            user: { id: result.id, username: result.username },
+            token: token
         });
     } catch (error) {
         console.error('Login error:', error);
