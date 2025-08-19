@@ -81,22 +81,23 @@ body {
 /* ==================== NAVIGATION TABS ==================== */
 .nav-tabs {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     margin-bottom: 30px;
     background: white;
-    padding: 10px;
+    padding: 15px;
     border-radius: 10px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     overflow-x: auto;
 }
 
 .nav-tab {
-    padding: 12px 24px;
+    padding: 18px 32px;
     background: transparent;
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: 10px;
     color: var(--gray);
     font-weight: 600;
+    font-size: 1.1em;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
@@ -223,15 +224,16 @@ body {
 }
 
 /* ==================== ENHANCIVE TARGETS ==================== */
-.target-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 40px;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    animation: slideIn 0.3s ease;
+.enhancive-targets {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#targetsContainer {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 @keyframes slideIn {
@@ -351,7 +353,7 @@ body {
     font-weight: 600;
 }
 
-.permanence-badge.permanent {
+.permanence-badge.persists {
     background: #c6f6d5;
     color: #22543d;
 }
@@ -396,14 +398,21 @@ body {
 
 .slot-row {
     display: grid;
-    grid-template-columns: 120px 100px 1fr 60px 80px 40px;
-    gap: 10px;
-    padding: 10px;
+    grid-template-columns: 100px 80px 1fr 100px 60px 30px;
+    gap: 0;
+    padding: 2px 4px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
     align-items: center;
     transition: all 0.3s;
 }
+
+.slot-row > :nth-child(1) { margin-right: 0; }     /* Location */
+.slot-row > :nth-child(2) { margin-right: 0; }     /* Slot number */  
+.slot-row > :nth-child(3) { margin-right: 3px; }   /* Dropdown */
+.slot-row > :nth-child(4) { margin-right: 4px; }   /* Checkboxes */
+.slot-row > :nth-child(5) { margin-right: 0; }     /* Status */
+.slot-row > :nth-child(6) { margin-right: 0; }     /* Unequip button */
 
 .slot-row:hover {
     background: #e2e8f0;
@@ -417,7 +426,6 @@ body {
 
 .slot-number {
     color: var(--gray);
-    font-size: 0.9em;
 }
 
 .slot-number.premium {
@@ -431,11 +439,10 @@ body {
 }
 
 .slot-item-select {
-    padding: 8px;
+    padding: 4px 6px;
     background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.95em;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s;
 }
@@ -453,8 +460,8 @@ body {
 }
 
 .slot-status {
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 2px 6px;
+    border-radius: 4px;
     font-size: 0.85em;
     font-weight: 600;
     text-align: center;
@@ -474,15 +481,78 @@ body {
     background: var(--danger);
     color: white;
     border: none;
-    border-radius: 5px;
-    padding: 8px;
+    border-radius: 4px;
+    padding: 4px;
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.3s;
+    width: 24px;
+    height: 24px;
 }
 
 .slot-row:hover .unequip-btn.active {
     opacity: 1;
+}
+
+/* Equipment slot checkboxes and labels */
+.slot-row label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8em;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.slot-row input[type="checkbox"] {
+    margin: 0;
+    padding: 0;
+    width: 12px;
+    height: 12px;
+}
+
+/* Remove spinner buttons from number inputs and control width */
+.amount-input {
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    margin: 0;
+}
+
+.amount-input::-webkit-outer-spin-button,
+.amount-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    display: none;
+}
+
+/* Ensure target rows don't overflow */
+.target-row {
+    display: grid;
+    grid-template-columns: 1fr 65px 50px 30px;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    animation: slideIn 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.target-row .amount-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 4px !important;
+    font-size: 0.9em !important;
+    border: 1px solid #e2e8f0 !important;
 }
 
 /* ==================== TOTALS TAB STYLES ==================== */
@@ -592,42 +662,65 @@ body {
 
 .equipped-summary {
     background: white;
-    padding: 20px;
+    padding: 5px;
     border-radius: 10px;
-    height: calc(100% - 60px); /* Match slots container height */
+    height: calc(98% - 70px); /* Account for section title and margins, reduced 2% */
     overflow-y: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
 }
 
 .summary-title {
     font-size: 1.3em;
     font-weight: bold;
     color: var(--dark);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
     border-bottom: 2px solid var(--primary);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .summary-grid {
     display: grid;
     gap: 10px;
+    width: 100%;
+    max-width: 100%;
 }
 
 .summary-item {
     display: flex;
     justify-content: space-between;
-    padding: 10px;
+    padding: 8px;
     background: #f8f9fa;
     border-radius: 6px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .summary-target {
     font-weight: 600;
     color: var(--dark);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .summary-value {
     color: var(--primary);
     font-weight: bold;
+    flex-shrink: 0;
+    margin-left: 8px;
 }
 
 /* ==================== NOTIFICATION ==================== */
@@ -779,7 +872,8 @@ body {
     }
     
     .nav-tab {
-        padding: 10px 16px;
+        padding: 14px 20px;
+        font-size: 1em;
         white-space: nowrap;
     }
     
@@ -797,4 +891,47 @@ body {
     .panel {
         padding: 15px;
     }
+}
+
+/* ==================== MARKETPLACE TAB STYLES ==================== */
+.marketplace-tabs {
+    width: 100%;
+}
+
+.tab-navigation {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--gray);
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    color: var(--primary);
+    background: rgba(66, 153, 225, 0.1);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: rgba(66, 153, 225, 0.1);
+}
+
+.marketplace-tab-panel {
+    display: none;
+}
+
+.marketplace-tab-panel.active {
+    display: block;
 }

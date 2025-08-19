@@ -32,8 +32,8 @@ const Constants = {
                        "Mental Lore - Transformation"]
     },
     
-    boostTypes: ["Base", "Bonus", "Ranks", "Recovery"],
-    permanenceTypes: ["Permanent", "Crumbly"],
+    boostTypes: ["Base", "Bonus", "Ranks", "Regen", "Max"],
+    permanenceTypes: ["Persists", "Crumbly"],
     statCap: 40,
     skillCap: 50,
     resourceCaps: {
