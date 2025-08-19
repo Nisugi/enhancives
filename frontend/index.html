@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhancive Tracker Pro</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container hidden">
+        <div class="login-box">
+            <h1>Enhancive Tracker Pro</h1>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a id="showRegisterLink">Register</a></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚔️ Enhancive Tracker Pro ⚔️</h1>
+            <p>Complete Enhancive Management System</p>
+            <div class="header-actions">
+                <button onclick="DataModule.exportData()">💾 Export</button>
+                <button onclick="DataModule.importData()">📂 Import</button>
+                <button onclick="AuthModule.showLoginModal()" id="loginBtn">🔑 Login</button>
+                <button onclick="AuthModule.syncData()" id="syncBtn" style="display: none;">🔄 Sync</button>
+                <button onclick="AuthModule.logout()" id="logoutBtn" style="display: none;">🚪 Logout</button>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="UI.switchTab('items')">📦 Items</button>
+            <button class="nav-tab" onclick="UI.switchTab('equipment')">⚔️ Equipment</button>
+            <button class="nav-tab" onclick="UI.switchTab('totals')">📊 Totals</button>
+            <button class="nav-tab" onclick="UI.switchTab('analysis')">📈 Analysis</button>
+            <button class="nav-tab" id="marketplaceTab" onclick="UI.switchTab('marketplace')" style="display: none;">🏪 Marketplace</button>
+            <button class="nav-tab" onclick="UI.switchTab('settings')">⚙️ Settings</button>
+        </div>
+        
+        <!-- Statistics Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="value" id="totalItems">0</div>
+                <div class="label">Total Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="totalEquipped">0</div>
+                <div class="label">Equipped</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="filledSlots">0</div>
+                <div class="label">Slots Filled</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="totalEnhancives">0</div>
+                <div class="label">Active Enhancives</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="cappedStats">0</div>
+                <div class="label">Capped Stats</div>
+            </div>
+        </div>
+        
+        <!-- Items Tab -->
+        <div id="items-tab" class="tab-panel active">
+            <div class="items-layout">
+                <div class="panel panel-sticky">
+                    <h2 class="section-title">Add New Item</h2>
+                    <div id="itemForm"></div>
+                </div>
+                <div class="panel">
+                    <h2 class="section-title">Your Items</h2>
+                    <input type="text" class="search-bar" placeholder="🔍 Search items..." onkeyup="ItemsModule.searchItems(this.value)">
+                    <div id="itemsList" class="items-grid"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipment Tab -->
+        <div id="equipment-tab" class="tab-panel">
+            <div class="equipment-layout">
+                <div class="panel">
+                    <h2 class="section-title">Equipment Slots (57 Total)</h2>
+                    <div id="equipmentSlots" class="slots-container"></div>
+                </div>
+                <div class="panel">
+                    <h2 class="section-title">Equipped Enhancives Summary</h2>
+                    <div id="equippedSummary" class="equipped-summary"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Totals Tab -->
+        <div id="totals-tab" class="tab-panel">
+            <div class="totals-layout">
+                <div class="panel">
+                    <h2 class="section-title">Stats & Skills Progress</h2>
+                    <div id="totalsContent"></div>
+                </div>
+                <div class="panel">
+                    <h2 class="section-title">Cap Analysis</h2>
+                    <div id="capAnalysis"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analysis Tab -->
+        <div id="analysis-tab" class="tab-panel">
+            <div class="panel">
+                <h2 class="section-title">Analysis & Optimization</h2>
+                <div id="analysisContent"></div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-panel">
+            <div class="panel">
+                <h2 class="section-title">Settings & Data Management</h2>
+                <div id="settingsContent"></div>
+            </div>
+        </div>
+        
+        <!-- Marketplace Tab -->
+        <div id="marketplace-tab" class="tab-panel">
+            <div class="panel">
+                <h2 class="section-title">🏪 Marketplace</h2>
+                <div id="marketplaceContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <!-- Hidden file input for import -->
+    <input type="file" id="importFile" accept=".json" style="display: none;">
+    
+    <script src="js/config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/totals.js"></script>
+    <script src="js/analysis.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/marketplace.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
