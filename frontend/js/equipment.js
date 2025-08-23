@@ -26,9 +26,16 @@ const EquipmentModule = (() => {
                 const data = await response.json();
                 console.log('Raw marketplace data:', data);
                 const currentUser = AuthModule.getCurrentUser();
-                // Exclude user's own items
-                marketplaceItems = (data || []).filter(item => item.username !== currentUser.username);
-                console.log('Filtered marketplace items:', marketplaceItems);
+                console.log('Current user:', currentUser);
+                // Exclude user's own items - check both username and user_id
+                marketplaceItems = (data || []).filter(item => {
+                    const isOwnItem = item.username === currentUser.username || 
+                                      item.username === currentUser.email ||
+                                      item.user_id === currentUser.id;
+                    console.log(`Item "${item.name}" by ${item.username} - is own item: ${isOwnItem}`);
+                    return !isOwnItem;
+                });
+                console.log('Filtered marketplace items:', marketplaceItems.length, 'items');
             } else {
                 console.error('Failed to fetch marketplace items:', response.status, response.statusText);
                 marketplaceItems = [];
