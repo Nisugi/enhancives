@@ -171,7 +171,7 @@ const EquipmentModule = (() => {
                     <div class="slot-row">
                         <div class="slot-location">${location}</div>
                         <div class="slot-number ${slotType}">
-                            ${slotLabel}
+                            ${slotLabel} (${availableItems.length})
                         </div>
                         <select class="slot-item-select ${item ? 'has-item' : ''}" 
                                 onchange="EquipmentModule.equipItem('${location}', ${i}, this.value)">

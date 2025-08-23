@@ -150,7 +150,9 @@ const MarketplaceModule = (() => {
             
             if (response.ok) {
                 const data = await response.json();
-                marketplaceItems = data || [];
+                const currentUser = AuthModule.getCurrentUser();
+                // Filter out user's own items
+                marketplaceItems = (data || []).filter(item => item.username !== currentUser.username);
                 renderMarketplaceItems();
             } else {
                 const errorData = await response.json().catch(() => ({}));
