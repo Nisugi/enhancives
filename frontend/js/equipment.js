@@ -170,15 +170,24 @@ const EquipmentModule = (() => {
                 // Sort by total enhancive value (descending)
                 availableItems.sort((a, b) => b.totalValue - a.totalValue);
                 
-                const slotLabel = getSlotLabel(location, i, count);
-                const slotType = slotLabel.includes('Premium') ? 'premium' : 
-                               slotLabel.includes('Platinum') ? 'platinum' : '';
+                const baseSlotLabel = getSlotLabel(location, i, count);
+                const slotType = baseSlotLabel.includes('Premium') ? 'premium' : 
+                               baseSlotLabel.includes('Platinum') ? 'platinum' : '';
+                
+                // Reformat label to show: "Slot X (Y) (Premium/Platinum)" or "Slot X (Y)"
+                let slotLabel = baseSlotLabel;
+                if (baseSlotLabel.includes('(Premium)') || baseSlotLabel.includes('(Platinum)')) {
+                    const parts = baseSlotLabel.split(' (');
+                    slotLabel = `${parts[0]} (${availableItems.length}) (${parts[1]}`;
+                } else {
+                    slotLabel = `${baseSlotLabel} (${availableItems.length})`;
+                }
                 
                 return `
                     <div class="slot-row">
                         <div class="slot-location">${location}</div>
                         <div class="slot-number ${slotType}">
-                            ${slotLabel} (${availableItems.length})
+                            ${slotLabel}
                         </div>
                         <select class="slot-item-select ${item ? 'has-item' : ''}" 
                                 onchange="EquipmentModule.equipItem('${location}', ${i}, this.value)">
