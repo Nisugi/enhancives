@@ -158,6 +158,8 @@ const ItemsModule = (() => {
     
     const renderItemsList = () => {
         const items = DataModule.getItems();
+        const equippedItems = DataModule.getEquippedItems();
+        const equippedItemIds = new Set(equippedItems.map(item => item.id));
         const container = document.getElementById('itemsList');
         
         // Update total items count
@@ -188,6 +190,7 @@ const ItemsModule = (() => {
                         <span class="permanence-badge ${item.permanence.toLowerCase()}">
                             ${item.permanence}
                         </span>
+                        ${equippedItemIds.has(item.id) ? '<span class="equipped-badge" style="background: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600;">Equipped</span>' : ''}
                     </div>
                 </div>
                 
@@ -429,6 +432,8 @@ const ItemsModule = (() => {
     };
     
     const renderSortedItemsList = (sortedItems) => {
+        const equippedItems = DataModule.getEquippedItems();
+        const equippedItemIds = new Set(equippedItems.map(item => item.id));
         const container = document.getElementById('itemsList');
         
         // Update total items count
@@ -459,6 +464,7 @@ const ItemsModule = (() => {
                         <span class="permanence-badge ${item.permanence.toLowerCase()}">
                             ${item.permanence}
                         </span>
+                        ${equippedItemIds.has(item.id) ? '<span class="equipped-badge" style="background: var(--success); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600;">Equipped</span>' : ''}
                     </div>
                 </div>
                 
